@@ -204,18 +204,50 @@
     el.results.innerHTML = `<div class="err">${esc(msg)}</div>`;
   }
 
+  // 与 cmf/models.py 的 KIND_ORDER 一致：全部 → 学习向 → 教材/官方 → 其他。
+  const KIND_ORDER = [
+    'exercise', 'exam', 'solution', 'review', 'explanation', 'note', 'slides', 'video', 'qa',
+    'textbook', 'official', 'course',
+    'paper', 'reference', 'repo', 'dataset', 'web', 'link',
+  ];
+  const FAMILY_OF = {
+    exercise: 'study', exam: 'study', solution: 'study', review: 'study', explanation: 'study',
+    note: 'study', slides: 'study', video: 'study', qa: 'study',
+    textbook: 'canonical', official: 'canonical', course: 'canonical',
+  };
+  const FAMILY_LABEL = { study: '学习向', canonical: '教材/官方', other: '其他' };
+
+  function familyOf(r) {
+    return r.kind_family || FAMILY_OF[r.kind] || 'other';
+  }
+
+  function orderedKinds(rs) {
+    const present = new Map();
+    rs.forEach((r) => { if (!present.has(r.kind)) present.set(r.kind, r.kind_label || r.kind); });
+    const out = [];
+    KIND_ORDER.forEach((k) => { if (present.has(k)) out.push([k, present.get(k)]); });
+    present.forEach((label, k) => { if (!KIND_ORDER.includes(k)) out.push([k, label]); });
+    return out;
+  }
+
+  function familyCountLine(rs) {
+    const n = { study: 0, canonical: 0, other: 0 };
+    rs.forEach((r) => {
+      if (r.kind === 'link') return;
+      const fam = familyOf(r);
+      n[fam] = (n[fam] || 0) + 1;
+    });
+    return `${FAMILY_LABEL.study} ${n.study} · ${FAMILY_LABEL.canonical} ${n.canonical} · ${FAMILY_LABEL.other} ${n.other}`;
+  }
+
   // ------------------------------------------------------------------ render
   function render(preview) {
     if (!data) return;
     const rs = data.resources || [];
-    const kinds = [];
     const counts = {};
-    rs.forEach((r) => {
-      if (!counts[r.kind]) { counts[r.kind] = 0; kinds.push([r.kind, r.kind_label]); }
-      counts[r.kind] += 1;
-    });
+    rs.forEach((r) => { counts[r.kind] = (counts[r.kind] || 0) + 1; });
     const tabs = [['all', `全部 ${rs.length}`]]
-      .concat(kinds.map(([k, label]) => [k, `${label} ${counts[k]}`]));
+      .concat(orderedKinds(rs).map(([k, label]) => [k, `${label} ${counts[k]}`]));
 
     const exp = `/api/export?job=${encodeURIComponent(job)}`;
     const exportHtml = preview ? '' : `<div class="rexport">
@@ -257,11 +289,13 @@
   function paintCards(preview) {
     const rs = (data.resources || []).filter((r) => activeKind === 'all' || r.kind === activeKind);
     const st = data.stats || {};
-    $('rsum').textContent =
-      `${rs.length} 条 · ${preview ? '正文抓取中' : `用时 ${data.elapsed}s`}` +
+    const all = data.resources || [];
+    const detail =
+      `当前 ${rs.length} 条 · ${preview ? '正文抓取中' : `用时 ${data.elapsed}s`}` +
       (!preview ? ` · 正文 ${st.crawled || 0} 条` : '') +
       (!preview && st.downloaded ? ` · 已下载 ${st.downloaded}` : '') +
       (!preview && st.timed_out ? ` · ${st.timed_out} 个源超时` : '');
+    $('rsum').innerHTML = `<div class="counts">${esc(familyCountLine(all))}</div><div>${esc(detail)}</div>`;
     $('cards').innerHTML = rs.length
       ? rs.map(card).join('')
       : `<div class="empty">这一类没有结果。换个关键词，或把「最低相关度」调低一点。</div>`;
@@ -269,8 +303,9 @@
 
   function card(r) {
     const [label, cls] = STATUS[r.crawl_status || ''] || ['未抓取', ''];
-    const meta = [r.source_label, r.kind_label, r.lang_label, r.year, r.org]
+    const meta = [r.source_label, r.lang_label, r.year, r.org]
       .filter(Boolean).map((x) => `<em>${esc(x)}</em>`).join(' · ');
+    const fam = familyOf(r);
     let summary = r.excerpt || r.description || '';
     if (r.kind === 'video' && summary.length < 20) summary = ''; // 视频的「自用」这类占位简介没信息量
     const pdf = r.pdf_url
@@ -279,6 +314,7 @@
     const play = r.extra && r.extra.play ? `<span class="badge">▶ ${esc(shortNum(r.extra.play))}</span>` : '';
     const dur = r.extra && r.extra.duration ? `<span class="badge">${esc(fmtDur(r.extra.duration))}</span>` : '';
     return `<article class="card">
+      <div class="kbadge ${esc(fam)}">${esc(r.kind_label || r.kind)}</div>
       <h3><a href="${esc(r.url)}" target="_blank" rel="noreferrer">${esc(r.title)}</a></h3>
       <div class="meta">${meta}</div>
       ${summary ? `<p class="para">${esc(summary.slice(0, 260))}</p>` : ''}

@@ -12,8 +12,6 @@
 from __future__ import annotations
 
 import argparse
-import csv
-import io
 import json
 import mimetypes
 import re
@@ -32,7 +30,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from cmf.engine import Options, list_sources, search  # noqa: E402
-from cmf.report import render_html, render_markdown  # noqa: E402
+from cmf.report import render_csv, render_html, render_markdown  # noqa: E402
 from cmf.sources import ALL_SOURCES, resolve  # noqa: E402
 
 MAX_JOBS = 30
@@ -298,20 +296,7 @@ class Handler(BaseHTTPRequestHandler):
             payload["stats"] = job.stats
             body, ctype, ext = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8"), "application/json; charset=utf-8", "json"
         elif fmt == "csv":
-            buf = io.StringIO()
-            from cmf.report import CSV_FIELDS, _access
-
-            w = csv.DictWriter(buf, fieldnames=CSV_FIELDS)
-            w.writeheader()
-            for r in job.result.resources:
-                w.writerow({
-                    "title": r.title, "url": r.url, "source": r.source, "source_label": r.source_label,
-                    "kind": r.kind_label, "lang": r.lang_label, "year": r.year or "", "org": r.org,
-                    "authors": "; ".join(r.authors[:4]), "score": f"{r.score:.1f}",
-                    "relevance": f"{r.relevance:.2f}", "quality": f"{r.quality:.2f}",
-                    "crawl_status": _access(r), "pdf_url": r.pdf_url, "summary": r.summary(300),
-                })
-            body, ctype, ext = buf.getvalue().encode("utf-8-sig"), "text/csv; charset=utf-8", "csv"
+            body, ctype, ext = render_csv(job.result).encode("utf-8-sig"), "text/csv; charset=utf-8", "csv"
         else:
             return self._error(400, f"不支持的导出格式：{fmt}")
 

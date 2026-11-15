@@ -23,6 +23,7 @@ MODIFIERS = {
     # 考试
     "期末": "exam", "期中": "exam", "考试": "exam", "真题": "exam", "试卷": "exam",
     "往年": "exam", "题库": "exam", "答案": "answer", "解析": "answer", "题解": "answer",
+    "解答": "answer",
     "exam": "exam", "final": "exam", "midterm": "exam", "pastpaper": "exam",
     # 复习
     "复习": "review", "刷题": "review", "重点": "review", "考点": "review",
@@ -51,6 +52,10 @@ MODIFIERS = {
 }
 _MODS_BY_LEN = sorted(MODIFIERS, key=len, reverse=True)
 
+# 只输课名时，搜索引擎 / GitHub / 平台入口用这些学习向词扩展，避免只搜课名。
+STUDY_EXPANSIONS_ZH = ("习题", "真题", "讲义", "题解")
+STUDY_EXPANSIONS_EN = ("exercises", "past papers", "lecture notes", "solutions")
+
 # 只在「空格分隔的整词」或「结尾」时才剥的噪声词（"大学物理" 里的"大学"绝不能剥）
 SAFE_NOISE = {
     "免费": "", "下载": "", "在线": "", "高清": "", "完整版": "", "全套": "",
@@ -74,8 +79,66 @@ class Query:
     def wants(self, tag: str) -> bool:
         return tag in self.modifiers
 
+    def with_intent(self) -> str:
+        """课名 + 用户真正写上的意图词。噪声词（免费/下载）丢掉，意图词保留。
+
+        「高等数学 期末复习」保持原样，不会被收成只有「高等数学」。
+        """
+        parts = [p for p in _SPLIT.split(self.raw) if p]
+        kept: List[str] = []
+        for p in parts:
+            if p in SAFE_NOISE or p.lower() in SAFE_NOISE:
+                continue
+            kept.append(p)
+        text = " ".join(kept).strip()
+        return text or self.core or self.raw
+
     def search_string(self) -> str:
-        return self.core or self.raw
+        """发给搜索引擎的主查询：保留意图词，不再只返回课名。"""
+        return self.with_intent()
+
+    def _study_terms(self) -> tuple:
+        if self.lang == "en" and not self.is_zh:
+            return STUDY_EXPANSIONS_EN
+        return STUDY_EXPANSIONS_ZH
+
+    def engine_queries(self) -> List[str]:
+        """百度 / 必应 / 搜狗实际发出的查询。
+
+        用户写了意图词就原样搜这一条；只输课名时再扩展习题/真题/讲义/题解，
+        每条单独搜（搜索引擎把空格当 AND，不能拼成一个长 AND）。
+        """
+        primary = self.with_intent()
+        if self.modifiers:
+            return [primary]
+        subject = self.core or primary
+        out = [primary]
+        for term in self._study_terms():
+            expanded = f"{subject} {term}".strip()
+            if expanded and expanded not in out:
+                out.append(expanded)
+        return out
+
+    def github_query(self) -> str:
+        """GitHub 仓库搜索。只输课名时附上 notes/solutions/题解/讲义。"""
+        subject = self.with_intent()
+        if self.modifiers:
+            return f"{subject} in:name,description,readme"
+        if self.lang == "en" and not self.is_zh:
+            extra = "exercises OR solutions OR notes OR lecture"
+        else:
+            extra = "习题 OR 题解 OR 讲义 OR notes OR solutions"
+        head = self.core or subject
+        return f"{head} ({extra}) in:name,description,readme"
+
+    def portal_query(self) -> str:
+        """平台入口链接上的检索词。付费/登录站只生成链接，不抓正文。"""
+        if self.modifiers:
+            return self.with_intent()
+        subject = self.core or self.with_intent()
+        if self.lang == "en" and not self.is_zh:
+            return f"{subject} exercises notes solutions"
+        return f"{subject} 习题 真题 讲义 题解"
 
 
 def detect_lang(text: str) -> str:

@@ -95,7 +95,7 @@ class BilibiliSource(Source):
             self.API,
             params={
                 "search_type": "video",
-                "keyword": q.core,
+                "keyword": q.with_intent(),
                 "page": 1,
                 "page_size": min(max(ctx.per_source, 10), 50),
             },

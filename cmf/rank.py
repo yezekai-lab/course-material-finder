@@ -2,8 +2,8 @@
 """Ranking & dedupe.
 
 score = 100 * (0.60*相关度 + 0.20*源质量 + 0.10*时效 + 0.10*语言匹配)
-相关度只用「查询核心词的 token 覆盖率」算——做过实测，标题命中权重 0.7 足够，
-再复杂就得引入向量模型，对「找一个课程资料」这种场景收益很低。
+相关度只用「查询词的 token 覆盖率」算。默认有用程度偏向习题、真题、题解、
+讲义和复习，教材/官方课可以留下，但不再压过这些学习资料。
 """
 from __future__ import annotations
 
@@ -15,79 +15,152 @@ from .models import Resource
 from .query import Query
 from .textutil import jaccard, norm_title, normalize_url, tokens
 
-# 各数据源的质量先验（0~1）：官方课程库/开放教材库最高，搜索引擎最低
+# 各数据源的质量先验（0~1）。
+# 能稳定露出习题/真题/讲义/复习的源略高；开放教材和官方慕课保留但不再最高；
+# 论文库默认压低，只有用户明确要论文时再加回来（见 quality()）。
 SOURCE_QUALITY = {
-    "ocw": 0.95,
-    "openstax": 0.95,
-    "chinaooc": 0.92,
-    "otl": 0.90,
-    "openalex": 0.88,
-    "europepmc": 0.88,
-    "crossref": 0.85,
-    "arxiv": 0.85,
-    "doaj": 0.82,
-    "wikibooks": 0.80,
-    "bilibili": 0.78,
-    "wikipedia": 0.75,
-    "github": 0.70,
-    "zenodo": 0.70,
-    "stackexchange": 0.72,
-    "gutendex": 0.62,
-    "bing": 0.55,
-    "baidu": 0.52,
-    "sogou": 0.50,
+    "bilibili": 0.84,
+    "stackexchange": 0.78,
+    "github": 0.76,
+    "ocw": 0.78,
+    "openstax": 0.76,
+    "baidu": 0.74,
+    "chinaooc": 0.74,
+    "otl": 0.74,
+    "bing": 0.72,
+    "wikibooks": 0.70,
+    "wikipedia": 0.66,
+    "sogou": 0.62,
+    "openalex": 0.58,
+    "arxiv": 0.58,
+    "zenodo": 0.56,
+    "crossref": 0.56,
+    "doaj": 0.54,
+    "europepmc": 0.50,
+    "gutendex": 0.48,
     "portals": 0.40,
 }
 
-# 用户意图 → 哪种资料类型加分
+PAPER_SOURCES = {"openalex", "crossref", "doaj", "arxiv", "europepmc"}
+COURSE_SOURCES = {"chinaooc", "ocw"}
+
+# 用户意图 → 哪种资料类型在相关度上加分。
+# 找习题时不加教材：教材可以留下，但不能因为意图词被抬上去。
 WANT_BOOST = {
-    "video": {"video": 0.18, "course": 0.12},
-    "course": {"course": 0.18, "video": 0.10},
-    "textbook": {"textbook": 0.18},
-    "slides": {"textbook": 0.05, "web": 0.08, "note": 0.12},
-    "notes": {"note": 0.15, "textbook": 0.05},
-    "exam": {"web": 0.05, "qa": 0.05, "note": 0.05},
-    "exercise": {"qa": 0.12, "textbook": 0.06},
-    "paper": {"paper": 0.18},
+    "video": {"video": 0.16, "explanation": 0.12, "course": 0.08},
+    "course": {"course": 0.16, "video": 0.08, "official": 0.04},
+    "textbook": {"textbook": 0.16},
+    "slides": {"slides": 0.16, "note": 0.06},
+    "notes": {"note": 0.16, "review": 0.06, "slides": 0.04},
+    "exam": {"exam": 0.16, "solution": 0.10, "review": 0.08, "exercise": 0.05, "qa": 0.04},
+    "exercise": {"exercise": 0.16, "solution": 0.12, "qa": 0.06, "note": 0.04},
+    "answer": {"solution": 0.16, "exercise": 0.08, "exam": 0.05, "qa": 0.04},
+    "review": {"review": 0.16, "note": 0.08, "video": 0.08, "explanation": 0.08},
+    "kaoyan": {"exam": 0.12, "review": 0.10, "video": 0.10, "exercise": 0.08, "solution": 0.08},
+    "cheatsheet": {"review": 0.14, "note": 0.10, "slides": 0.06},
+    "paper": {"paper": 0.18, "reference": 0.04},
     "lab": {"repo": 0.10, "dataset": 0.10},
     "project": {"repo": 0.12},
-    "intro": {"course": 0.06, "textbook": 0.06},
+    "intro": {"video": 0.08, "explanation": 0.08, "note": 0.05, "course": 0.04},
+    "syllabus": {"official": 0.16, "course": 0.06},
 }
-KIND_INTENT = {"video": "video", "course": "course", "textbook": "textbook"}
 
-# 资料类型对「学生找课程资料」的默认有用程度
+# 默认有用程度：只输课名时，学习向类型不低于教材。
+# 教材/课程留在中上，论文和百科默认靠后。
 KIND_UTILITY = {
-    "course": 0.92,
-    "textbook": 1.00,
-    "note": 0.95,
-    "video": 0.86,
-    "qa": 0.80,
-    "repo": 0.80,
-    "paper": 0.76,
-    "reference": 0.70,
-    "dataset": 0.70,
-    "web": 0.72,
+    "exercise": 1.00,
+    "exam": 1.00,
+    "solution": 1.00,
+    "review": 0.98,
+    "note": 0.98,
+    "slides": 0.96,
+    "explanation": 0.96,
+    "video": 0.94,
+    "qa": 0.90,
+    "repo": 0.72,
+    "web": 0.70,
+    "textbook": 0.62,
+    "course": 0.60,
+    "official": 0.58,
+    "reference": 0.64,
+    "dataset": 0.50,
+    "paper": 0.38,
     "link": 0.30,
 }
-# 意图 × 类型的修正：想找期末卷子时，一篇「高数教学法论文」不是他要的
-INTENT_KIND_UTILITY = {
-    ("exam", "paper"): 0.45,
-    ("exam", "web"): 0.90,
-    ("exam", "note"): 1.00,
-    ("exercise", "paper"): 0.45,
-    ("review", "paper"): 0.45,
-    ("slides", "paper"): 0.50,
-    ("notes", "paper"): 0.50,
-    ("textbook", "paper"): 0.50,
-    ("video", "paper"): 0.45,
-    ("course", "paper"): 0.55,
-    ("kaoyan", "paper"): 0.60,
-    ("paper", "paper"): 1.15,
-    ("paper", "web"): 0.50,
-    ("paper", "video"): 0.50,
+STUDY_KIND_SET = {
+    "exercise", "exam", "solution", "review", "explanation", "note", "slides", "video", "qa",
 }
 
-EXAM_HINTS = ("期末", "期中", "真题", "试卷", "答案", "考点", "复习", "提纲", "题库", "习题")
+# 意图 × 类型的乘数。论文在找课的时候再乘一次，明确要论文时才抬回去。
+INTENT_KIND_UTILITY = {
+    ("exam", "paper"): 0.35,
+    ("exam", "reference"): 0.70,
+    ("exam", "textbook"): 0.70,
+    ("exam", "course"): 0.72,
+    ("exam", "official"): 0.70,
+    ("exercise", "paper"): 0.40,
+    ("exercise", "reference"): 0.70,
+    ("exercise", "textbook"): 0.65,
+    ("exercise", "course"): 0.70,
+    ("exercise", "official"): 0.70,
+    ("answer", "paper"): 0.40,
+    ("answer", "textbook"): 0.68,
+    ("answer", "course"): 0.72,
+    ("review", "paper"): 0.40,
+    ("review", "reference"): 0.75,
+    ("review", "textbook"): 0.75,
+    ("review", "course"): 0.75,
+    ("slides", "paper"): 0.45,
+    ("slides", "textbook"): 0.75,
+    ("notes", "paper"): 0.45,
+    ("notes", "textbook"): 0.75,
+    ("kaoyan", "paper"): 0.45,
+    ("kaoyan", "textbook"): 0.70,
+    ("video", "paper"): 0.45,
+    ("course", "paper"): 0.55,
+    ("intro", "paper"): 0.50,
+    ("textbook", "paper"): 0.55,
+    ("textbook", "textbook"): 1.70,
+    ("textbook", "exercise"): 0.85,
+    ("textbook", "exam"): 0.80,
+    ("paper", "paper"): 3.00,
+    ("paper", "reference"): 1.25,
+    ("paper", "web"): 0.55,
+    ("paper", "video"): 0.45,
+    ("paper", "exam"): 0.50,
+    ("paper", "exercise"): 0.50,
+    ("paper", "solution"): 0.50,
+    ("paper", "review"): 0.50,
+    ("paper", "note"): 0.55,
+    ("paper", "textbook"): 0.70,
+    ("paper", "course"): 0.60,
+    ("course", "course"): 1.35,
+    ("video", "course"): 1.25,
+    ("video", "video"): 1.12,
+    ("syllabus", "official"): 1.40,
+}
+
+# 标题里出现这些词，说明这条真的是用户要的那种资料（相关度小幅加分，上限仍是 1）。
+TITLE_HINTS = {
+    "exam": ("期末", "期中", "真题", "试卷", "试题", "past paper", "final", "midterm"),
+    "review": ("复习", "考点", "提纲", "考纲", "cheatsheet"),
+    "exercise": ("习题", "练习", "作业", "homework", "exercise", "problem set"),
+    "answer": ("题解", "答案", "解析", "solution"),
+    "notes": ("讲义", "笔记", "notes", "handout"),
+    "slides": ("课件", "ppt", "slides", "幻灯"),
+    "kaoyan": ("考研",),
+    "cheatsheet": ("cheatsheet", "速查", "考点"),
+}
+
+# 最终名单里，教材/课程/论文不能按「每个源 3 条」无限占坑。
+DEFAULT_KIND_CAPS = {
+    "textbook": 4,
+    "course": 3,
+    "official": 2,
+    "paper": 2,
+    "reference": 2,
+}
+DEFAULT_FAMILY_CAPS = {"canonical": 8}
 
 
 def _coverage(q: Set[str], hay: Set[str]) -> float:
@@ -105,12 +178,14 @@ def relevance(res: Resource, q: Query, q_tokens: Set[str]) -> float:
     # 核心词整体出现（中文标题里常见），再加一点
     if q.core and q.core.lower() in (res.title or "").lower():
         rel = min(1.0, rel + 0.12)
-    # 意图匹配
+    # 意图匹配。加分按类型给，找习题时不会加到教材上。
     for mod in q.modifiers:
         rel += WANT_BOOST.get(mod, {}).get(res.kind, 0.0)
-    # 想找考试资料时，标题里带「期末/真题/考点」的才真相关
-    if (q.wants("exam") or q.wants("review")) and any(h in res.title for h in EXAM_HINTS):
-        rel += 0.10
+    title_l = (res.title or "").lower()
+    for mod in q.modifiers:
+        if any(h.lower() in title_l for h in TITLE_HINTS.get(mod, ())):
+            rel += 0.08
+            break
     return max(0.0, min(1.0, rel))
 
 
@@ -125,6 +200,14 @@ def utility(res: Resource, q: Query | None = None) -> float:
 def quality(res: Resource, q: Query | None = None) -> float:
     base = SOURCE_QUALITY.get(res.source, 0.55)
     ex = res.extra or {}
+    # 本科课查询默认压着论文库；用户明确要论文时再抬回来。
+    if q and q.wants("paper") and res.source in PAPER_SOURCES:
+        base += 0.14
+    if q and (q.wants("course") or q.wants("video") or q.wants("syllabus")) and res.source in COURSE_SOURCES:
+        base += 0.08
+    # 仓库名/简介已经标成题解、讲义、习题时，比一个普通代码仓库更有用。
+    if res.source == "github" and res.kind in STUDY_KIND_SET:
+        base += 0.05
     # 社区热度信号：对数压缩，避免一个 10 万星的仓库压死所有结果
     if res.source == "github" and ex.get("stars"):
         base += min(0.12, math.log10(max(int(ex["stars"]), 1)) / 50)
@@ -133,7 +216,7 @@ def quality(res: Resource, q: Query | None = None) -> float:
         if play:
             base += min(0.10, math.log10(play) / 60)
     if res.source in ("openalex", "crossref") and ex.get("citations"):
-        base += min(0.08, math.log10(max(int(ex["citations"]), 1)) / 60)
+        base += min(0.06, math.log10(max(int(ex["citations"]), 1)) / 80)
     if ex.get("is_oa") or res.pdf_url:
         base += 0.04  # 有合法全文，能直接用
     if res.extra.get("national"):
@@ -228,23 +311,92 @@ def _merge(dst: Resource, src: Resource) -> None:
         dst.extra.setdefault(k, v)
 
 
-def diversify(resources: List[Resource], limit: int, max_per_source: int = 3) -> List[Resource]:
-    """防止单一源刷榜：每个源最多 max_per_source 条进最终列表。"""
+def _caps_for(q: Query | None, limit: int) -> Tuple[Dict[str, int], Dict[str, int]]:
+    kind_caps = dict(DEFAULT_KIND_CAPS)
+    family_caps = dict(DEFAULT_FAMILY_CAPS)
+    if q is None:
+        return kind_caps, family_caps
+    if q.wants("paper"):
+        kind_caps["paper"] = max(limit, 1)
+    if q.wants("textbook"):
+        kind_caps["textbook"] = max(8, limit // 2)
+        family_caps["canonical"] = max(family_caps.get("canonical", 8), kind_caps["textbook"] + 2)
+    if q.wants("course") or q.wants("video"):
+        kind_caps["course"] = max(6, limit // 3)
+        family_caps["canonical"] = max(family_caps.get("canonical", 8), kind_caps["course"] + 2)
+    if q.wants("syllabus"):
+        kind_caps["official"] = max(6, kind_caps.get("official", 2))
+        family_caps["canonical"] = max(family_caps.get("canonical", 8), kind_caps["official"] + 2)
+    return kind_caps, family_caps
+
+
+def diversify(
+    resources: List[Resource],
+    limit: int,
+    max_per_source: int = 3,
+    max_per_kind: Dict[str, int] | None = None,
+    q: Query | None = None,
+) -> List[Resource]:
+    """每个源有上限，教材/课程/论文还有类型上限。
+
+    类型上限优先于「把名单凑满」：先收下学习向结果，教材只占少量坑。
+    只有剩下的全是被封顶的类型时，才放宽上限，避免整页空白。
+    """
+    from .models import kind_family_of
+
     if limit <= 0:
-        return resources
+        return list(resources)
+    kind_caps, family_caps = _caps_for(q, limit)
+    if max_per_kind:
+        kind_caps.update(max_per_kind)
+
     out: List[Resource] = []
-    counts: Dict[str, int] = {}
-    overflow: List[Resource] = []
+    source_counts: Dict[str, int] = {}
+    kind_counts: Dict[str, int] = {}
+    family_counts: Dict[str, int] = {}
+    deferred_source: List[Resource] = []
+    deferred_kind: List[Resource] = []
+
+    def kind_blocked(kind: str) -> bool:
+        cap = kind_caps.get(kind)
+        if cap is not None and kind_counts.get(kind, 0) >= cap:
+            return True
+        fam = kind_family_of(kind)
+        fam_cap = family_caps.get(fam)
+        return fam_cap is not None and family_counts.get(fam, 0) >= fam_cap
+
+    def add(r: Resource) -> None:
+        out.append(r)
+        source_counts[r.source] = source_counts.get(r.source, 0) + 1
+        kind_counts[r.kind] = kind_counts.get(r.kind, 0) + 1
+        fam = kind_family_of(r.kind)
+        family_counts[fam] = family_counts.get(fam, 0) + 1
+
     for r in resources:
         if len(out) >= limit:
             break
-        if counts.get(r.source, 0) >= max_per_source:
-            overflow.append(r)
+        if kind_blocked(r.kind):
+            deferred_kind.append(r)
             continue
-        counts[r.source] = counts.get(r.source, 0) + 1
-        out.append(r)
+        if source_counts.get(r.source, 0) >= max_per_source:
+            deferred_source.append(r)
+            continue
+        add(r)
+
     if len(out) < limit:
-        out.extend(overflow[: limit - len(out)])
+        for r in deferred_source:
+            if len(out) >= limit:
+                break
+            if kind_blocked(r.kind):
+                deferred_kind.append(r)
+                continue
+            add(r)
+
+    if len(out) < limit:
+        for r in deferred_kind:
+            if len(out) >= limit:
+                break
+            add(r)
     return out
 
 
@@ -253,12 +405,41 @@ def top_by_kind(resources: List[Resource], kind: str, n: int) -> List[Resource]:
 
 
 def group_by_kind(resources: List[Resource]) -> List[Tuple[str, List[Resource]]]:
-    from .models import KIND_LABELS
+    from .models import KIND_ORDER
 
-    order = ["course", "video", "textbook", "note", "paper", "qa", "repo", "dataset", "reference", "web", "link"]
     buckets: Dict[str, List[Resource]] = {}
     for r in resources:
         buckets.setdefault(r.kind, []).append(r)
-    return [(k, buckets[k]) for k in order if k in buckets] + [
-        (k, v) for k, v in buckets.items() if k not in order
-    ]
+    ordered = [(k, buckets[k]) for k in KIND_ORDER if k in buckets]
+    ordered += [(k, v) for k, v in buckets.items() if k not in KIND_ORDER]
+    return ordered
+
+
+def group_by_family(resources: List[Resource]) -> List[Tuple[str, List[Resource]]]:
+    """分类清单：学习向资料 → 教材与官方文档 → 其他。同一族里按 kind 顺序，族内保持原排序。"""
+    from .models import KIND_ORDER, kind_family_of
+
+    buckets: Dict[str, List[Resource]] = {"study": [], "canonical": [], "other": []}
+    index = {k: i for i, k in enumerate(KIND_ORDER)}
+    for r in resources:
+        if r.kind == "link":
+            continue
+        buckets.setdefault(kind_family_of(r.kind), []).append(r)
+    sections: List[Tuple[str, List[Resource]]] = []
+    for fam in ("study", "canonical", "other"):
+        items = buckets.get(fam) or []
+        if not items:
+            continue
+        items = sorted(items, key=lambda r: index.get(r.kind, 99))
+        sections.append((fam, items))
+    return sections
+
+
+def rank_resources(resources: Sequence[Resource], q: Query) -> List[Resource]:
+    """分类 → 去重 → 打分 → 按分排序。引擎的预览和最终结果都走这里。"""
+    from .classify import apply_kinds
+
+    items = apply_kinds(list(resources), q)
+    items = score_all(dedupe(items), q)
+    items.sort(key=lambda r: -r.score)
+    return items

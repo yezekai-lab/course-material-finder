@@ -50,11 +50,12 @@ class LinkPortalSource(Source):
 
     def fetch(self, q: Query, ctx: Context) -> List[Resource]:
         out: List[Resource] = []
-        term = quote_plus(q.core)
+        shown = q.portal_query()
+        term = quote_plus(shown)
         for name, template, note in PORTALS:
             out.append(
                 self.make(
-                    title=f"在「{name}」检索：{q.core}",
+                    title=f"在「{name}」检索：{shown}",
                     url=template.format(q=term),
                     kind="link",
                     lang="zh",
