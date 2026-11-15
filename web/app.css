@@ -83,12 +83,20 @@ a:hover{text-decoration:underline}
 .rexport a{color:var(--dim)}
 .rexport a:hover{color:var(--fg)}
 .rsum{color:var(--dim);font-size:12.5px;margin:6px 0 18px}
+.rsum .counts{color:var(--muted);margin-bottom:2px}
 
 .card{border-top:1px solid var(--line);padding:18px 0}
 .card:first-of-type{border-top:0}
 .card h3{margin:0 0 6px;font-size:16px;font-weight:600;line-height:1.45}
 .card h3 a{color:var(--fg)}
 .card h3 a:hover{color:var(--acc);text-decoration:none}
+.kbadge{
+  display:inline-block;font-size:12px;font-weight:600;line-height:1.4;
+  border-radius:6px;padding:1px 8px;margin:0 0 8px
+}
+.kbadge.study{color:#9ad7b0;background:rgba(74,194,107,.14);border:1px solid #274a33}
+.kbadge.canonical{color:#8b93a1;background:transparent;border:1px solid #2a303a}
+.kbadge.other{color:#a9b4c4;background:#191c22;border:1px solid #2a303a}
 .meta{color:var(--dim);font-size:12.5px;margin-bottom:8px}
 .meta em{color:var(--muted);font-style:normal}
 .para{color:#c3cad6;font-size:14px;margin:0 0 10px}

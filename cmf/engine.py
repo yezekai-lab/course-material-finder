@@ -18,7 +18,7 @@ from .concurrent import Deadline, run_with_deadline
 from .http import HttpClient, default_cache_dir
 from .models import Resource, SearchResult, SourceStatus
 from .query import Query, parse as parse_query
-from .rank import dedupe, diversify, score_all
+from .rank import diversify, rank_resources
 from .sources import ALL_SOURCES, LINK_IDS, Context, Source, resolve
 
 log = logging.getLogger("cmf.engine")
@@ -139,8 +139,7 @@ def search(text: str, opts: Optional[Options] = None) -> Tuple[SearchResult, dic
             return
         preview_done = True
         try:
-            ranked = score_all(dedupe(items), q)
-            ranked.sort(key=lambda r: -r.score)
+            ranked = rank_resources(items, q)
             opts.on_ranked([r.to_dict() for r in ranked[: max(opts.limit, 10)]], len(ranked))
         except Exception:  # noqa: BLE001
             log.debug("early ranking failed", exc_info=True)
@@ -180,9 +179,8 @@ def search(text: str, opts: Optional[Options] = None) -> Tuple[SearchResult, dic
     statuses.sort(key=lambda s: order.get(s.id, 99))
 
     phase("ranking")
-    resources = score_all(dedupe(resources), q)
+    resources = rank_resources(resources, q)
     resources = [r for r in resources if r.score >= opts.min_score]
-    resources.sort(key=lambda r: -r.score)
 
     stats = {"crawled": 0, "abstracts": 0, "oa_pdf": 0, "downloaded": 0, "timed_out": len(unfinished)}
     if resources and opts.on_ranked:
@@ -213,7 +211,7 @@ def search(text: str, opts: Optional[Options] = None) -> Tuple[SearchResult, dic
 
     phase("finishing")
 
-    resources = diversify(resources, opts.limit)
+    resources = diversify(resources, opts.limit, q=q)
     result = SearchResult(
         query=text,
         core=q.core,

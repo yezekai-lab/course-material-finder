@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import html as html_mod
+import io
 import json
 from pathlib import Path
 from typing import List
@@ -30,11 +31,16 @@ def _access(res: Resource) -> str:
     return ACCESS_LABEL.get(res.crawl_status, res.crawl_status)
 
 
+def _kind_tag(res: Resource) -> str:
+    return f"【{res.kind_label}】"
+
+
 def _line_md(res: Resource, idx: int | None = None) -> str:
     head = f"**[{res.title}]({res.url})**" if res.url else f"**{res.title}**"
+    head = f"{_kind_tag(res)} {head}"
     if idx is not None:
         head = f"{idx}. {head}"
-    bits = [res.source_label or res.source, res.kind_label]
+    bits = [res.source_label or res.source]
     if res.lang:
         bits.append(res.lang_label)
     if res.year:
@@ -61,8 +67,28 @@ def _line_md(res: Resource, idx: int | None = None) -> str:
     return "\n".join(out)
 
 
+def _legend_lines(resources: List[Resource]) -> List[str]:
+    from .models import family_count_line, present_kinds
+
+    labels = [f"【{label}】" for kind, label in present_kinds(resources) if kind != "link"]
+    lines = ["类型图例：" + (" ".join(labels) if labels else "（无）"), family_count_line(resources)]
+    return lines
+
+
+def _kinds_in(items: List[Resource]) -> List[tuple]:
+    from .models import KIND_ORDER
+
+    buckets: dict = {}
+    for r in items:
+        buckets.setdefault(r.kind, []).append(r)
+    ordered = [(k, buckets[k]) for k in KIND_ORDER if k in buckets]
+    ordered += [(k, v) for k, v in buckets.items() if k not in KIND_ORDER]
+    return ordered
+
+
 def render_markdown(result: SearchResult, stats: dict | None = None) -> str:
-    from .rank import group_by_kind
+    from .models import FAMILY_SECTION
+    from .rank import group_by_family
 
     L: List[str] = []
     L.append(f"# 课程资料检索报告：{result.query}")
@@ -80,6 +106,8 @@ def render_markdown(result: SearchResult, stats: dict | None = None) -> str:
         )
         if stats.get("timed_out"):
             L.append(f"> 注意：有 **{stats['timed_out']}** 个数据源超出时间预算被放弃（见文末抓取情况表）")
+    for line in _legend_lines(result.resources):
+        L.append(f"> {line}")
     L.append("")
 
     top = result.resources[:5]
@@ -92,14 +120,16 @@ def render_markdown(result: SearchResult, stats: dict | None = None) -> str:
 
     L.append("## 二、分类清单")
     L.append("")
-    for kind, items in group_by_kind(result.resources):
-        if kind == "link":
-            continue
-        L.append(f"### {items[0].kind_label}（{len(items)}）")
+    for fam, items in group_by_family(result.resources):
+        L.append(f"### {FAMILY_SECTION.get(fam, fam)}（{len(items)}）")
         L.append("")
-        for r in items:
-            L.append(_line_md(r))
+        for kind, group in _kinds_in(items):
+            label = group[0].kind_label
+            L.append(f"#### {label}（{len(group)}）")
             L.append("")
+            for r in group:
+                L.append(_line_md(r))
+                L.append("")
         L.append("")
 
     if result.link_portals:
@@ -145,36 +175,48 @@ def write_json(result: SearchResult, path: Path) -> Path:
 
 
 CSV_FIELDS = [
-    "title", "url", "source", "source_label", "kind", "lang", "year", "org",
-    "authors", "score", "relevance", "quality", "crawl_status", "pdf_url", "summary",
+    "title", "url", "source", "source_label", "kind", "kind_id", "kind_family",
+    "kind_family_label", "lang", "year", "org", "authors", "score", "relevance",
+    "quality", "crawl_status", "pdf_url", "summary",
 ]
+
+
+def csv_row(res: Resource) -> dict:
+    """kind 列继续写中文标签；kind_id / kind_family 是稳定 id。"""
+    return {
+        "title": res.title,
+        "url": res.url,
+        "source": res.source,
+        "source_label": res.source_label,
+        "kind": res.kind_label,
+        "kind_id": res.kind,
+        "kind_family": res.kind_family,
+        "kind_family_label": res.kind_family_label,
+        "lang": res.lang_label,
+        "year": res.year or "",
+        "org": res.org,
+        "authors": "; ".join(res.authors[:4]),
+        "score": f"{res.score:.1f}",
+        "relevance": f"{res.relevance:.2f}",
+        "quality": f"{res.quality:.2f}",
+        "crawl_status": _access(res),
+        "pdf_url": res.pdf_url,
+        "summary": res.summary(300),
+    }
+
+
+def render_csv(result: SearchResult) -> str:
+    buf = io.StringIO()
+    w = csv.DictWriter(buf, fieldnames=CSV_FIELDS)
+    w.writeheader()
+    for r in result.resources:
+        w.writerow(csv_row(r))
+    return buf.getvalue()
 
 
 def write_csv(result: SearchResult, path: Path) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8-sig", newline="") as fh:
-        w = csv.DictWriter(fh, fieldnames=CSV_FIELDS)
-        w.writeheader()
-        for r in result.resources:
-            w.writerow(
-                {
-                    "title": r.title,
-                    "url": r.url,
-                    "source": r.source,
-                    "source_label": r.source_label,
-                    "kind": r.kind_label,
-                    "lang": r.lang_label,
-                    "year": r.year or "",
-                    "org": r.org,
-                    "authors": "; ".join(r.authors[:4]),
-                    "score": f"{r.score:.1f}",
-                    "relevance": f"{r.relevance:.2f}",
-                    "quality": f"{r.quality:.2f}",
-                    "crawl_status": _access(r),
-                    "pdf_url": r.pdf_url,
-                    "summary": r.summary(300),
-                }
-            )
+    path.write_text(render_csv(result), encoding="utf-8-sig")
     return path
 
 
@@ -189,6 +231,12 @@ h1{font-size:26px;margin:0 0 6px}h2{margin:34px 0 12px;font-size:19px;border-lef
 .tags span{display:inline-block;font-size:12px;color:var(--muted);border:1px solid #2c323d;border-radius:99px;padding:1px 8px;margin:0 6px 6px 0}
 .p{color:#c7cdd8;font-size:14px}.bar{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
 .ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.kbadge{display:inline-block;font-size:12px;font-weight:600;border-radius:6px;padding:1px 8px;margin:0 8px 6px 0;vertical-align:middle}
+.kbadge.study{color:#9ad7b0;background:rgba(63,185,80,.12);border:1px solid #274a33}
+.kbadge.canonical{color:#9aa4b2;background:transparent;border:1px solid #2c323d}
+.kbadge.other{color:#c7cdd8;background:#12151c;border:1px solid #2c323d}
+.legend{color:var(--muted);font-size:13px;margin:8px 0 4px}
+.counts{color:var(--fg);margin-bottom:6px}
 table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
 th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #232833}th{color:var(--muted);font-weight:500}
 input,button{font:inherit}input{background:#0b0d11;border:1px solid #2c323d;color:var(--fg);border-radius:8px;padding:10px 12px;width:100%}
@@ -207,13 +255,14 @@ def render_html(result: SearchResult, stats: dict | None = None) -> str:
 
 def render_html_body(result: SearchResult, stats: dict | None = None) -> str:
     """结果正文（不含 <html> 外壳），本地 Web 界面直接复用。"""
-    from .rank import group_by_kind
+    from .models import FAMILY_SECTION, family_count_line, kind_family_of, present_kinds
+    from .rank import group_by_family
 
     def esc(s: str) -> str:
         return html_mod.escape(s or "")
 
     def card(r: Resource) -> str:
-        tags = [r.source_label or r.source, r.kind_label, r.lang_label]
+        tags = [r.source_label or r.source, r.lang_label]
         if r.year:
             tags.append(str(r.year))
         if r.org:
@@ -228,9 +277,12 @@ def render_html_body(result: SearchResult, stats: dict | None = None) -> str:
             links.append(f'<a href="{esc(r.pdf_url)}" target="_blank" rel="noreferrer">PDF</a>')
         status = _access(r)
         cls = "ok" if r.crawl_status in ("ok", "pdf") else ("warn" if r.crawl_status in ("blocked", "not-found") else "bad")
+        badge = (
+            f'<span class="kbadge {esc(r.kind_family)}">{esc(r.kind_label)}</span>'
+        )
         return (
             '<div class="card">'
-            f'<h3><a href="{esc(r.url)}" target="_blank" rel="noreferrer">{esc(r.title)}</a></h3>'
+            f'<h3>{badge}<a href="{esc(r.url)}" target="_blank" rel="noreferrer">{esc(r.title)}</a></h3>'
             f'<div class="tags">{"".join(f"<span>{esc(t)}</span>" for t in tags)}</div>'
             f'<div class="p">{summary}</div>'
             f'<div class="bar"><span class="{cls}">{esc(status)}</span>'
@@ -238,10 +290,17 @@ def render_html_body(result: SearchResult, stats: dict | None = None) -> str:
             "</div>"
         )
 
+    legend_badges = "".join(
+        f'<span class="kbadge {esc(kind_family_of(kind))}">{esc(label)}</span>'
+        for kind, label in present_kinds(result.resources)
+        if kind != "link"
+    )
     body = [
         f'<div class="wrap"><h1>课程资料检索报告：{esc(result.query)}</h1>',
         f'<div class="meta">生成 {esc(result.generated_at)} ｜ 用时 {result.elapsed:.1f}s ｜ '
         f'命中 {len(result.resources)} 条 ｜ 检索主体 <code>{esc(result.core)}</code></div>',
+        f'<div class="legend"><div class="counts">{esc(family_count_line(result.resources))}</div>'
+        f'<div>类型图例：{legend_badges}</div></div>',
     ]
     if stats:
         body.append(
@@ -254,11 +313,11 @@ def render_html_body(result: SearchResult, stats: dict | None = None) -> str:
             )
     body.append("<h2>先看这几条</h2>")
     body.extend(card(r) for r in result.resources[:5])
-    for kind, items in group_by_kind(result.resources):
-        if kind == "link":
-            continue
-        body.append(f"<h2>{esc(items[0].kind_label)}（{len(items)}）</h2>")
-        body.extend(card(r) for r in items)
+    for fam, items in group_by_family(result.resources):
+        body.append(f"<h2>{esc(FAMILY_SECTION.get(fam, fam))}（{len(items)}）</h2>")
+        for kind, group in _kinds_in(items):
+            body.append(f"<h3>{esc(group[0].kind_label)}（{len(group)}）</h3>")
+            body.extend(card(r) for r in group)
     if result.link_portals:
         body.append("<h2>仅链接：抓不到的平台，给你入口</h2><table><tr><th>平台</th><th>说明</th><th>链接</th></tr>")
         for r in result.link_portals:
@@ -300,7 +359,7 @@ def render_console(result: SearchResult, stats: dict | None = None) -> str:
         )
     lines.append("-" * 72)
     for i, r in enumerate(result.resources[:10], 1):
-        tag = f"{r.kind_label}/{r.source_label}"
+        tag = f"【{r.kind_label}】{r.source_label}"
         lines.append(f"{i:>2}. [{r.score:>5.1f}] {r.title[:56]}")
         lines.append(f"    {tag} · {_access(r)} · {r.url[:88]}")
     if len(result.resources) > 10:

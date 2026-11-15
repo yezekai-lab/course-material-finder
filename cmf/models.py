@@ -6,23 +6,89 @@ import hashlib
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-# 资料类型 —— 报告分组与打分都用这一套
+# 资料类型。打分用具体 kind；kind_family 只用于展示和筛选。
+# 学习向在前，教材/官方次之，其余在后。筛选与导出都按这个顺序。
+STUDY_KINDS = [
+    "exercise", "exam", "solution", "review", "explanation",
+    "note", "slides", "video", "qa",
+]
+CANONICAL_KINDS = ["textbook", "official", "course"]
+OTHER_KINDS = ["paper", "reference", "repo", "dataset", "web", "link"]
+KIND_ORDER = STUDY_KINDS + CANONICAL_KINDS + OTHER_KINDS
+
 KIND_LABELS = {
-    "course": "在线课程",
-    "video": "视频课",
-    "textbook": "开放教材",
-    "paper": "论文/预印本",
+    "exercise": "习题/作业",
+    "exam": "真题/试卷",
+    "solution": "题解/答案",
+    "review": "复习/考点",
+    "explanation": "讲解",
     "note": "讲义/笔记",
-    "qa": "问答/题解",
+    "slides": "课件",
+    "video": "视频课",
+    "qa": "问答",
+    "textbook": "教材",
+    "official": "官方文档",
+    "course": "在线课程",
+    "paper": "论文/预印本",
     "reference": "百科/参考",
     "repo": "代码仓库",
     "dataset": "数据/实验",
-    "link": "平台检索入口",
     "web": "网页资料",
+    "link": "平台检索入口",
+}
+
+KIND_FAMILY = {k: "study" for k in STUDY_KINDS}
+KIND_FAMILY.update({k: "canonical" for k in CANONICAL_KINDS})
+KIND_FAMILY.update({k: "other" for k in OTHER_KINDS})
+
+FAMILY_LABELS = {
+    "study": "学习向",
+    "canonical": "教材/官方",
+    "other": "其他",
+}
+
+FAMILY_SECTION = {
+    "study": "学习向资料",
+    "canonical": "教材与官方文档",
+    "other": "其他",
 }
 
 # 语言 → 展示
 LANG_LABELS = {"zh": "中文", "en": "英文", "other": "其他"}
+
+
+def kind_family_of(kind: str) -> str:
+    return KIND_FAMILY.get(kind or "", "other")
+
+
+def kind_family_label_of(kind: str) -> str:
+    return FAMILY_LABELS.get(kind_family_of(kind), "其他")
+
+
+def family_counts(resources: List["Resource"]) -> Dict[str, int]:
+    """三组计数。link 不进主结果，这里也不计。"""
+    counts = {"study": 0, "canonical": 0, "other": 0}
+    for r in resources:
+        if r.kind == "link":
+            continue
+        fam = kind_family_of(r.kind)
+        counts[fam] = counts.get(fam, 0) + 1
+    return counts
+
+
+def family_count_line(resources: List["Resource"]) -> str:
+    c = family_counts(resources)
+    return f"学习向 {c['study']} · 教材/官方 {c['canonical']} · 其他 {c['other']}"
+
+
+def present_kinds(resources: List["Resource"]) -> List[tuple]:
+    """筛选顺序：学习向（有结果的）→ 教材/官方 → 其他。"""
+    have = {}
+    for r in resources:
+        have.setdefault(r.kind, KIND_LABELS.get(r.kind, r.kind))
+    ordered = [(k, have[k]) for k in KIND_ORDER if k in have]
+    ordered += [(k, label) for k, label in have.items() if k not in KIND_ORDER]
+    return ordered
 
 
 @dataclass
@@ -59,6 +125,14 @@ class Resource:
         return KIND_LABELS.get(self.kind, self.kind)
 
     @property
+    def kind_family(self) -> str:
+        return kind_family_of(self.kind)
+
+    @property
+    def kind_family_label(self) -> str:
+        return FAMILY_LABELS.get(self.kind_family, "其他")
+
+    @property
     def lang_label(self) -> str:
         return LANG_LABELS.get(self.lang, self.lang)
 
@@ -75,6 +149,8 @@ class Resource:
             "source_label": self.source_label,
             "kind": self.kind,
             "kind_label": self.kind_label,
+            "kind_family": self.kind_family,
+            "kind_family_label": self.kind_family_label,
             "lang": self.lang,
             "lang_label": self.lang_label,
             "year": self.year,

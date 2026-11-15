@@ -17,6 +17,47 @@ from ..textutil import strip_html
 from .base import Context, Source, SourceMeta
 
 
+def _round_robin(batches: List[List[Resource]], limit: int) -> List[Resource]:
+    """几条查询的结果轮流取，避免第一条（往往是课名本身）占满名额。"""
+    out: List[Resource] = []
+    seen = set()
+    idx = 0
+    progressed = True
+    while len(out) < limit and progressed:
+        progressed = False
+        for batch in batches:
+            if idx >= len(batch):
+                continue
+            progressed = True
+            item = batch[idx]
+            key = item.url or item.title
+            if key not in seen:
+                seen.add(key)
+                out.append(item)
+                if len(out) >= limit:
+                    break
+        idx += 1
+    return out
+
+
+def _search_pages(src: Source, q: Query, ctx: Context, fetch_html, parse) -> List[Resource]:
+    """用户写了意图就搜这一条；只输课名时按习题/真题/讲义/题解扩展。
+
+    扩展查询失败不影响已经拿到的主查询。付费站不在这里，它们只走 portals。
+    """
+    batches: List[List[Resource]] = []
+    for i, term in enumerate(q.engine_queries()):
+        timeout = src.meta.timeout if i == 0 else min(12.0, src.meta.timeout)
+        try:
+            html = fetch_html(term, timeout)
+        except Exception:
+            if i == 0:
+                raise
+            break
+        batches.append(parse(html, src, ctx))
+    return _round_robin(batches, ctx.per_source)
+
+
 class BingSource(Source):
     meta = SourceMeta(
         id="bing",
@@ -24,21 +65,17 @@ class BingSource(Source):
         kind="web",
         lang="mixed",
         tier="engine",
-        note="抓取结果页，覆盖笔记站/课程主页/论坛贴",
+        note="抓取结果页，覆盖笔记站/课程主页/论坛贴；只输课名时会追加习题/真题/讲义/题解",
         ttl=1800,
     )
     API = "https://www.bing.com/search"
 
     def fetch(self, q: Query, ctx: Context) -> List[Resource]:
-        html = ctx.http.get_text(
-            self.API,
-            params={"q": q.search_string(), "count": max(ctx.per_source * 2, 20), "setlang": "zh-hans"}
-            if q.is_zh
-            else {"q": q.search_string(), "count": max(ctx.per_source * 2, 20), "setlang": "en"},
-            timeout=self.meta.timeout,
-            ttl=self.meta.ttl,
-        )
-        return _parse_bing(html, self, ctx)
+        def fetch_html(term: str, timeout: float) -> str:
+            params = {"q": term, "count": max(ctx.per_source * 2, 20), "setlang": "zh-hans" if q.is_zh else "en"}
+            return ctx.http.get_text(self.API, params=params, timeout=timeout, ttl=self.meta.ttl)
+
+        return _search_pages(self, q, ctx, fetch_html, _parse_bing)
 
 
 def _parse_bing(html: str, src: Source, ctx: Context) -> List[Resource]:
@@ -84,22 +121,24 @@ class BaiduSource(Source):
         kind="web",
         lang="zh",
         tier="engine",
-        note="中文资源覆盖最广；需 cookie 预热，广告位已过滤",
+        note="中文资源覆盖最广；需 cookie 预热，广告位已过滤。只输课名时追加习题/真题/讲义/题解",
         ttl=1800,
         timeout=35,
     )
     API = "https://www.baidu.com/s"
 
     def fetch(self, q: Query, ctx: Context) -> List[Resource]:
-        html = ctx.http.get_text(
-            self.API,
-            params={"wd": q.search_string(), "rn": max(ctx.per_source * 2, 20)},
-            headers={"Referer": "https://www.baidu.com/"},
-            warmup="https://www.baidu.com/",
-            timeout=self.meta.timeout,
-            ttl=self.meta.ttl,
-        )
-        return _parse_baidu(html, self, ctx)
+        def fetch_html(term: str, timeout: float) -> str:
+            return ctx.http.get_text(
+                self.API,
+                params={"wd": term, "rn": max(ctx.per_source * 2, 20)},
+                headers={"Referer": "https://www.baidu.com/"},
+                warmup="https://www.baidu.com/",
+                timeout=timeout,
+                ttl=self.meta.ttl,
+            )
+
+        return _search_pages(self, q, ctx, fetch_html, _parse_baidu)
 
 
 def _parse_baidu(html: str, src: Source, ctx: Context) -> List[Resource]:
@@ -166,23 +205,32 @@ class SogouSource(Source):
     API = "https://www.sogou.com/web"
 
     def fetch(self, q: Query, ctx: Context) -> List[Resource]:
-        html = ctx.http.get_text(
-            self.API,
-            params={"query": q.search_string()},
-            warmup="https://www.sogou.com/",
-            timeout=self.meta.timeout,
-            ttl=self.meta.ttl,
-        )
-        out = []
-        for m in re.finditer(r'<h3[^>]*class="vr-title"[^>]*>.*?<a[^>]*href="([^"]+)"[^>]*>(.*?)</a>', html or "", re.S):
-            title = strip_html(m.group(2))
-            if not title:
-                continue
-            url = m.group(1)
-            if url.startswith("/link?"):
-                url = "https://www.sogou.com" + url
-            out.append(self.make(title=title, url=url, kind="web", lang="zh"))
-        return out[: ctx.per_source]
+        def fetch_html(term: str, timeout: float) -> str:
+            return ctx.http.get_text(
+                self.API,
+                params={"query": term},
+                warmup="https://www.sogou.com/",
+                timeout=timeout,
+                ttl=self.meta.ttl,
+            )
+
+        def parse(html: str, src: Source, ctx: Context) -> List[Resource]:
+            out = []
+            for m in re.finditer(
+                r'<h3[^>]*class="vr-title"[^>]*>.*?<a[^>]*href="([^"]+)"[^>]*>(.*?)</a>',
+                html or "",
+                re.S,
+            ):
+                title = strip_html(m.group(2))
+                if not title:
+                    continue
+                url = m.group(1)
+                if url.startswith("/link?"):
+                    url = "https://www.sogou.com" + url
+                out.append(src.make(title=title, url=url, kind="web", lang="zh"))
+            return out[: ctx.per_source]
+
+        return _search_pages(self, q, ctx, fetch_html, parse)
 
 
 def portal_query_url(base: str, q: str) -> str:

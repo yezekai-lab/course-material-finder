@@ -91,7 +91,7 @@ class StackExchangeSource(Source):
             params={
                 "order": "desc",
                 "sort": "relevance",
-                "q": q.core,
+                "q": q.with_intent(),
                 "site": site_name,
                 "pagesize": min(ctx.per_source, 20),
                 "filter": "withbody",
@@ -139,7 +139,7 @@ class GitHubSource(Source):
         data = ctx.http.get_json(
             "https://api.github.com/search/repositories",
             params={
-                "q": f"{q.core} in:name,description,readme",
+                "q": q.github_query(),
                 "sort": "stars",
                 "order": "desc",
                 "per_page": min(ctx.per_source, 20),

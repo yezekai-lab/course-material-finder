@@ -79,7 +79,9 @@ class TestTextUtil(unittest.TestCase):
         t = textutil.tokens("高等数学 期末复习")
         self.assertIn("高等", t)
         self.assertIn("数学", t)
-        self.assertNotIn("期末", t)  # 停用词，不参与相关性
+        self.assertIn("期末", t)  # 意图词要参与相关性
+        self.assertIn("复习", t)
+        self.assertNotIn("课程", textutil.tokens("大学课程"))
         self.assertIn("calculus", textutil.tokens("Calculus Lecture Notes"))
 
 
