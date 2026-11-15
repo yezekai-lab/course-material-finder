@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xml:lang="en-US" xmlns="http://www.w3.org/2005/Atom">
+  <id>tag:open.umn.edu,2005:/opentextbooks/textbooks?q=calculus</id>
+  <link rel="alternate" type="text/html" href="https://open.umn.edu"/>
+  <link rel="self" type="application/atom+xml" href="https://open.umn.edu/opentextbooks/textbooks"/>
+  <title>Open Textbook Library - Search results for "calculus"</title>
+  <updated>2018-09-07T12:21:38-05:00</updated>
+  <icon>https://open.umn.edu/assets/common/favicon/favicon-36b1b62e.ico</icon>
+  <logo>https://open.umn.edu/assets/library/otl_logo-4a5d9c2c.webp</logo>
+  <link href="https://open.umn.edu/opentextbooks/textbooks?page=1&amp;q=calculus" rel="self"/>
+  <link href="https://open.umn.edu/opentextbooks/textbooks?page=2&amp;q=calculus" rel="next"/>
+  <entry>
+    <id>https://open.umn.edu/opentextbooks/textbooks/calculus</id>
+    <published>2018-09-07T12:21:38-05:00</published>
+    <updated>2026-06-25T08:28:20-05:00</updated>
+    <link rel="alternate" type="text/html" href="https://open.umn.edu/opentextbooks/textbooks/calculus"/>
+    <title>Calculus - Third Edition</title>
+    <author>
+      <name>Open Textbook Library</name>
+    </author>
+    <content type="html">&lt;img alt="Read more about Calculus - Third Edition" title="Calculus - Third Edition cover image" class="cover" loading="lazy" data-controller="common--cover" data-common--cover-placeholder-value="/assets/common/placeholder-a2a9b833.webp" data-action="error-&amp;gt;common--cover#handleError" src="https://open.umn.edu/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MTAzMzMsInB1ciI6ImJsb2JfaWQifX0=--d33da72254617dcf9f37378f4de1aef441d8c9f5/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJ3ZWJwIiwicmVzaXplIjoiNDkweDEwMDAifSwicHVyIjoidmFyaWF0aW9uIn19--421ab82856ce4ced5bdaa37f96bcb9060315a4c7/calculus.jpg?disposition=inline" /&gt;Published in 1991 by Wellesley-Cambridge Press, the book is a useful resource for educators and self-learners alike. It is well organized, covers single variable and multivariable calculus in depth, and is rich with applications. Prof. Strang has also developed a related series of videos, Highlights of Calculus, on the basic ideas of calculus.</content>
+  </entry>
+  <entry>
+    <id>https://open.umn.edu/opentextbooks/textbooks/whitman-calculus</id>
+    <published>2018-09-07T12:21:40-05:00</published>
+    <updated>2026-05-18T12:03:49-05:00</updated>
+    <link rel="alternate" type="text/html" href="https://open.umn.edu/opentextbooks/textbooks/whitman-calculus"/>
+    <title>Whitman Calculus</title>
+    <author>
+      <name>Open Textbook Library</name>
+    </author>
+    <content type="html">&lt;img alt="Read more about Whitman Calculus" title="Whitman Calculus cover image" class="cover" loading="lazy" data-controller="common--cover" data-common--cover-placeholder-value="/assets/common/placeholder-a2a9b833.webp" data-action="error-&amp;gt;common--cover#handleError" src="https://open.umn.edu/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6NDIsInB1ciI6ImJsb2JfaWQifX0=--61716c549de596e9a943eea357bdc7aec95393bc/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJ3ZWJwIiwicmVzaXplIjoiNDkweDEwMDAifSwicHVyIjoidmFyaWF0aW9uIn19--421ab82856ce4ced5bdaa37f96bcb9060315a4c7/0000WhitCalc.png?disposition=inline" /&gt;An introductory level single variable calculus book, covering standard topics in differential and integral calculus, and infinite series. Late transcendentals and multivariable versions are also available. This textbook has been used in classes at: Boise State University, Claremont McKenna College, University of Minnesota, University of Puget Sound, Western Connecticut State University, Whitman College.</content>
+  </entry>
+  <entry>
+    <id>https://open.umn.edu/opentextbooks/textbooks/precalculus</id>
+    <published>2018-09-07T12:21:40-05:00</published>
+    <updated>2026-05-18T12:03:49-05:00</updated>
+    <link rel="alternate" type="text/html" href="https://open.umn.edu/opentextbooks/textbooks/precalculus"/>
+    <title>Precalculus</title>
+    <author>
+      <name>Open Textbook Library</name>
+    </author>
+    <content type="html">&lt;img alt="Read more about Precalculus" title="Precalculus cover image" class="cover" loading="lazy" data-controller="common--cover" data-common--cover-placeholder-value="/assets/common/placeholder-a2a9b833.webp" data-action="error-&amp;gt;common--cover#handleError" src="https://open.umn.edu/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6NDYsInB1ciI6ImJsb2JfaWQifX0=--2020a0c7045340f3b77ce0b1b1c6efb7ccf2b7a0/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJ3ZWJwIiwicmVzaXplIjoiNDkweDEwMDAifSwicHVyIjoidmFyaWF0aW9uIn19--421ab82856ce4ced5bdaa37f96bcb9060315a4c7/0000Faux01.png?disposition=inline" /&gt;A casual glance through the Table of Contents of most of the major publishers&amp;#39; College Algebra books reveals nearly isomorphic content in both order and depth. Our Table of Contents shows a different approach, one that might be labeled “Functions First.” To truly use The Rule of Four, that is, in order to discuss each new concept algebraically, graphically, numerically and verbally, it seems completely obvious to us that one would need to introduce functions first. (Take a moment and compare our ordering to the classic “equations first, then the Cartesian Plane and THEN functions” approach seen in most of the major players.) We then introduce a class of functions and discuss the equations, inequalities (with a heavy emphasis on sign diagrams) and applications which involve functions in that class. The material is presented at a level that definitely prepares a student for Calculus while giving them relevant Mathematics which can be used in other classes as well. Graphing calculators are used sparingly and only as a tool to enhance the Mathematics, not to replace it. The answers to nearly all of the computational homework exercises are given in thetext and we have gone to great lengths to write some very thought provoking discussion questions whose answers are not given. One will notice that our exercise sets are much shorter than the traditional sets of nearly 100 “drill and kill” questions which build skill devoid of understanding. Our experience has been that students can do about 15-20 homework exercises a night so we very carefully chose smaller sets of questions which cover all of the necessary skills and get the students thinking more deeply about the Mathematics involved.</content>
+  </entry>
+  <entry>
+    <id>https://open.umn.edu/opentextbooks/textbooks/vector-calculus</id>
+    <published>2018-09-07T12:21:42-05:00</published>
+    <updated>2026-05-18T12:03:49-05:00</updated>
+    <link rel="alternate" type="text/html" href="https://open.umn.edu/opentextbooks/textbooks/vector-calculus"/>
+    <title>Vector Calculus</title>
+    <author>
+      <name>Open Textbook Library</name>
+    </author>
+    <content type="html">&lt;img alt="Read more about Vector Calculus" title="Vector Calculus cover image" class="cover" loading="lazy" data-controller="common--cover" data-common--cover-placeholder-value="/assets/common/placeholder-a2a9b833.webp" data-action="error-&amp;gt;common--cover#handleError" src="https://open.umn.edu/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6NzQsInB1ciI6ImJsb2JfaWQifX0=--2465ebcb68fc9aff3bb076e2b5079b09588fdd70/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJ3ZWJwIiwicmVzaXplIjoiNDkweDEwMDAifSwicHVyIjoidmFyaWF0aW9uIn19--421ab82856ce4ced5bdaa37f96bcb9060315a4c7/0000VectorCal.png?disposition=inline" /&gt;This is a text on elementary multivariable calculus, designed for students who have completed courses in single-variable calculus. The traditional topics are covered: basic vector algebra; lines, planes and surfaces; vector-valued functions; functions of 2 or 3 variables; partial derivatives; optimization; multiple integrals; line and surface integrals. The book also includes discussion of numerical methods: Newton&amp;#39;s method for optimization, and the Monte Carlo method for evaluating multiple integrals. There is a section dealing with applications to probability. Appendices include a proof of the right-hand rule for the cross product, and a short tutorial on using Gnuplot for graphing functions of 2 variables There are 420 exercises in the book. Answers to selected exercises are included.</content>
+  </entry>
+  <entry>
+    <id>https://open.umn.edu/opentextbooks/textbooks/calculus-for-the-life-sciences-a-modeling-approach-volume-1</id>
+    <published>2018-09-07T12:21:42-05:00</published>
+    <updated>2026-05-18T02:09:28-05:00</updated>
+    <link rel="alternate" type="text/html" href="https://open.umn.edu/opentextbooks/textbooks/calculus-for-the-life-sciences-a-modeling-approach-volume-1"/>
+    <title>Calculus for the Life Sciences: A Modeling Approach Volume 1</title>
+    <author>
+      <name>Open Textbook Library</name>
+    </author>
+    <content type="html">&lt;img alt="Read more about Calculus for the Life Sciences: A Modeling Approach Volume 1" title="Calculus for the Life Sciences: A Modeling Approach Volume 1 cover image" class="cover" loading="lazy" data-controller="common--cover" data-common--cover-placeholder-value="/assets/common/placeholder-a2a9b833.webp" data-action="error-&amp;gt;common--cover#handleError" src="https://open.umn.edu/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6NzUsInB1ciI6ImJsb2JfaWQifX0=--fdca88c088bcef8491b22e636470fbc36bbab0bd/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJ3ZWJwIiwicmVzaXplIjoiNDkweDEwMDAifSwicHVyIjoidmFyaWF0aW9uIn19--421ab82856ce4ced5bdaa37f96bcb9060315a4c7/9781467976664.png?disposition=inline" /&gt;Our writing is based on three premises. First, life sciences students are motivated by and respond well to actual data related to real life sciences problems. Second, the ultimate goal of calculus in the life sciences primarily involves modeling living systems with difference and differential equations. Understanding the concepts of derivative and integral are crucial, but the ability to compute a large array of derivatives and integrals is of secondary importance. Third, the depth of calculus for life sciences students should be comparable to that of the traditional physics and engineering calculus course; else life sciences students will be short changed and their faculty will advise them to take the &amp;#39;best&amp;#39; (engineering) course. In our text, mathematical modeling and difference and differential equations lead, closely follow, and extend the elements of calculus. Chapter one introduces mathematical modeling in which students write descriptions of some observed processes and from these descriptions derive first order linear difference equations whose solutions can be compared with the observed data. In chapters in which the derivatives of algebraic, exponential, or trigonometric functions are defined, biologically motivated differential equations and their solutions are included. The chapter on partial derivatives includes a section on the diffusion partial differential equation. There are two chapters on non-linear difference equations and on systems of two difference equations and two chapters on differential equations and on systems of differential equation.</content>
+  </entry>
+  <entry>
+    <id>https://open.umn.edu/opentextbooks/textbooks/precalculus-an-investigation-of-functions</id>
+    <published>2018-09-07T12:21:43-05:00</published>
+    <updated>2026-05-18T12:03:49-05:00</updated>
+    <link rel="alternate" type="text/html" href="https://open.umn.edu/opentextbooks/textbooks/precalculus-an-investigation-of-functions"/>
+    <title>Precalculus: An Investigation of Functions</title>
+    <author>
+      <name>Open Textbook Library</name>
+    </author>
+    <content type="html">&lt;img alt="Read more about Precalculus: An Investigation of Functions" title="Precalculus: An Investigation of Functions cover image" class="cover" loading="lazy" data-controller="common--cover" data-common--cover-placeholder-value="/assets/common/placeholder-a2a9b833.webp" data-action="error-&amp;gt;common--cover#handleError" src="https://open.umn.edu/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6ODAsInB1ciI6ImJsb2JfaWQifX0=--6793a841436a7f8a9d488cb386b87df9b408a25b/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJ3ZWJwIiwicmVzaXplIjoiNDkweDEwMDAifSwicHVyIjoidmFyaWF0aW9uIn19--421ab82856ce4ced5bdaa37f96bcb9060315a4c7/0000InvofFunc.png?disposition=inline" /&gt;Precalculus: An Investigation of Functions is a free, open textbook covering a two-quarter pre-calculus sequence including trigonometry. The first portion of the book is an investigation of functions, exploring the graphical behavior of, interpretation of, and solutions to problems involving linear, polynomial, rational, exponential, and logarithmic functions. An emphasis is placed on modeling and interpretation, as well as the important characteristics needed in calculus. The second portion of the book introduces trigonometry. Trig is introduced through an integrated circle/triangle approach. Identities are introduced in the first chapter, and revisited throughout. Likewise, solving is introduced in the second chapter and revisited more extensively in the third chapter. As with the first part of the book, an emphasis is placed on motivating the concepts and on modeling and interpretation. In addition to the paper homework sets, algorithmetically generated online homework is available as part of a complete course shell package, which also includes a sample syllabus, teacher notes with lecture examples, sample quizzes and exams, printable classwork sheets and handouts, and chapter review problems. If you teach in Washington State, you can find the course shell in the WAMAP.org template course list. For those located elsewhere, you can access the course shell at MyOpenMath.com. A self-study version of the online course exercises is also available on MyOpenMath.com for students wanting to learn the material on their own, or who need a refresher.</content>
+  </entry>
+  <entry>
+    <id>https://open.umn.edu/opentextbooks/textbooks/calculus-for-the-life-sciences-a-modeling-approach-volume-2</id>
+    <published>2018-09-07T12:21:44-05:00</published>
+    <updated>2026-05-18T02:03:11-05:00</updated>
+    <link rel="alternate" type="text/html" href="https://open.umn.edu/opentextbooks/textbooks/calculus-for-the-life-sciences-a-modeling-approach-volume-2"/>
+    <title>Calculus for the Life Sciences: A Modeling Approach Volume 2</title>
+    <author>
+      <name>Open Textbook Library</name>
+    </author>
+    <content type="html">&lt;img alt="Read more about Calculus for the Life Sciences: A Modeling Approach Volume 2" title="Calculus for the Life Sciences: A Modeling Approach Volume 2 cover image" class="cover" loading="lazy" data-controller="common--cover" data-common--cover-placeholder-value="/assets/common/placeholder-a2a9b833.webp" data-action="error-&amp;gt;common--cover#handleError" src="https://open.umn.edu/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MTAzLCJwdXIiOiJibG9iX2lkIn19--680bc2a643130ef1990b3d538f7f7159ef7961a6/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJ3ZWJwIiwicmVzaXplIjoiNDkweDEwMDAifSwicHVyIjoidmFyaWF0aW9uIn19--421ab82856ce4ced5bdaa37f96bcb9060315a4c7/0000CalcLSVo2.png?disposition=inline" /&gt;Our writing is based on three premises. First, life sciences students are motivated by and respond well to actual data related to real life sciences problems. Second, the ultimate goal of calculus in the life sciences primarily involves modeling living systems with difference and differential equations. Understanding the concepts of derivative and integral are crucial, but the ability to compute a large array of derivatives and integrals is of secondary importance. Third, the depth of calculus for life sciences students should be comparable to that of the traditional physics and engineering calculus course; else life sciences students will be short changed and their faculty will advise them to take the &amp;#39;best&amp;#39; (engineering) course. In our text, mathematical modeling and difference and differential equations lead, closely follow, and extend the elements of calculus. Chapter one introduces mathematical modeling in which students write descriptions of some observed processes and from these descriptions derive first order linear difference equations whose solutions can be compared with the observed data. In chapters in which the derivatives of algebraic, exponential, or trigonometric functions are defined, biologically motivated differential equations and their solutions are included. The chapter on partial derivatives includes a section on the diffusion partial differential equation. There are two chapters on non-linear difference equations and on systems of two difference equations and two chapters on differential equations and on systems of differential equation.</content>
+  </entry>
+  <entry>
+    <id>https://open.umn.edu/opentextbooks/textbooks/precalculus-2016</id>
+    <published>2018-09-07T12:21:47-05:00</published>
+    <updated>2026-05-18T02:05:52-05:00</updated>
+    <link rel="alternate" type="text/html" href="https://open.umn.edu/opentextbooks/textbooks/precalculus-2016"/>
+    <title>Precalculus</title>
+    <author>
+      <name>Open Textbook Library</name>
+    </author>
+    <content type="html">&lt;img alt="Read more about Precalculus" title="Precalculus cover image" class="cover" loading="lazy" data-controller="common--cover" data-common--cover-placeholder-value="/assets/common/placeholder-a2a9b833.webp" data-action="error-&amp;gt;common--cover#handleError" src="https://open.umn.edu/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MTQ3LCJwdXIiOiJibG9iX2lkIn19--eefb04f973a04277de31bac47bf84c17bda02c93/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJ3ZWJwIiwicmVzaXplIjoiNDkweDEwMDAifSwicHVyIjoidmFyaWF0aW9uIn19--421ab82856ce4ced5bdaa37f96bcb9060315a4c7/0000Precalcu2.png?disposition=inline" /&gt;Prior to 1990, the performance of a student in precalculus at the University of Washington was not a predictor of success in calculus. For this reason, the mathematics department set out to create a new course with a specific set of goals in mind: A review of the essential mathematics needed to succeed in calculus. An emphasis on problem solving, the idea being to gain both experience and confidence in working with a particular set of mathematical tools. This text was created to achieve these goals and the 2004-05 academic year marks the eleventh year in which it has been used. Several thousand students have successfully passed through the course. This book is full of worked out examples. We use the the notation “Soluion.” to indicate where the reasoning for a problem begins; the symbol ?? is used to indicate the end of the solution to a problem. There is a Table of Contents that is useful in helping you find a topic treated earlier in the course. It is also a good rough outline when it comes time to study for the final examination. The book also includes an index at the end. Finally, there is an appendix at the end of the text with ”answers” to most of the problems in the text. It should be emphasized these are ”answers” as opposed to ”solutions”. Any homework problems you may be asked to turn in will require you include all your work; in other words, a detailed solution. Simply writing down the answer from the back of the text would never be sufficient; the answers are intended to be a guide to help insure you are on the right track.</content>
+  </entry>
+  <entry>
+    <id>https://open.umn.edu/opentextbooks/textbooks/active-calculus-2-0</id>
+    <published>2018-09-07T12:21:47-05:00</published>
+    <updated>2026-05-18T02:09:39-05:00</updated>
+    <link rel="alternate" type="text/html" href="https://open.umn.edu/opentextbooks/textbooks/active-calculus-2-0"/>
+    <title>Active Calculus 2.0</title>
+    <author>
+      <name>Open Textbook Library</name>
+    </author>
+    <content type="html">&lt;img alt="Read more about Active Calculus 2.0" title="Active Calculus 2.0 cover image" class="cover" loading="lazy" data-controller="common--cover" data-common--cover-placeholder-value="/assets/common/placeholder-a2a9b833.webp" data-action="error-&amp;gt;common--cover#handleError" src="https://open.umn.edu/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MTQ5LCJwdXIiOiJibG9iX2lkIn19--7e42ce9190a922800417b4ed6140efa637041cd6/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJ3ZWJwIiwicmVzaXplIjoiNDkweDEwMDAifSwicHVyIjoidmFyaWF0aW9uIn19--421ab82856ce4ced5bdaa37f96bcb9060315a4c7/9781974206841.png?disposition=inline" /&gt;Active Calculus is different from most existing calculus texts in at least the following ways: the text is freely readable online in HTML format and is also available for in PDF; in the electronic format, graphics are in full color and there are live links to java applets; version 2.0 now contains WeBWorK exercises in each chapter, which are fully interactive in the HTML format and included in print in the PDF; the text is open source, and interested users can gain access to the original source files on GitHub; the style of the text requires students to be active learners — there are very few worked examples in the text, with there instead being 3-4 activities per section that engage students in connecting ideas, solving problems, and developing understanding of key calculus concepts; each section begins with motivating questions, a brief introduction, and a preview activity, all of which are designed to be read and completed prior to class; following the WeBWorK exercises in each section, there are several challenging problems that require students to connect key ideas and write to communicate their understanding.</content>
+  </entry>
+  <entry>
+    <id>https://open.umn.edu/opentextbooks/textbooks/precalculus-2014</id>
+    <published>2018-09-07T12:21:48-05:00</published>
+    <updated>2026-05-18T12:03:50-05:00</updated>
+    <link rel="alternate" type="text/html" href="https://open.umn.edu/opentextbooks/textbooks/precalculus-2014"/>
+    <title>Precalculus</title>
+    <author>
+      <name>Open Textbook Library</name>
+    </author>
+    <content type="html">&lt;img alt="Read more about Precalculus" title="Precalculus cover image" class="cover" loading="lazy" data-controller="common--cover" data-common--cover-placeholder-value="/assets/common/placeholder-a2a9b833.webp" data-action="error-&amp;gt;common--cover#handleError" src="https://open.umn.edu/rails/active_storage/representations/redirect/eyJfcmFpbHMiOnsiZGF0YSI6MTYwLCJwdXIiOiJibG9iX2lkIn19--2265de6d63e5cbfb172054bdf49d88fef61fc945/eyJfcmFpbHMiOnsiZGF0YSI6eyJmb3JtYXQiOiJ3ZWJwIiwicmVzaXplIjoiNDkweDEwMDAifSwicHVyIjoidmFyaWF0aW9uIn19--421ab82856ce4ced5bdaa37f96bcb9060315a4c7/9781938168345.png?disposition=inline" /&gt;Precalculus is intended for college-level precalculus students. Since precalculus courses vary from one institution to the next, we have attempted to meet the needs of as broad an audience as possible, including all of the content that might be covered in any particular course. The result is a comprehensive book that covers more ground than an instructor could likely cover in a typical one- or two-semester course; but instructors should find, almost without fail, that the topics they wish to include in their syllabus are covered in the text. Many chapters of Openstax College Precalculus are suitable for other freshman and sophomore math courses such as College Algebra and Trigonometry; however, instructors of those courses might need to supplement or adjust the material. Openstax will also be releasing College Algebra and Algebra and Trigonometry titles tailored to the particular scope, sequence, and pedagogy of those courses. OpenStax College has compiled many resources for faculty and students, from faculty-only content to interactive homework and study guides.</content>
+  </entry>
+</feed>

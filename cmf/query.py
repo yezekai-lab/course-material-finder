@@ -1,0 +1,133 @@
+# -*- coding: utf-8 -*-
+"""Query understanding: 核心课程主体 vs. 学习意图修饰词。
+
+"高等数学 期末复习"      -> core="高等数学", mods={exam, review}
+"高等数学期末复习"        -> core="高等数学", mods={exam, review}   ← 中文没空格，按后缀剥离
+"数据结构 实验 报告"      -> core="数据结构", mods={lab}
+"calculus final exam"   -> core="calculus", mods={exam}
+
+只剥「后缀」和「空格分隔的整词」：中文课程名很少以意图词开头（"课程设计"是课名不是"课程"），
+按后缀剥可以避免把课名 cutter 成残废。
+"""
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass, field
+from typing import List, Set
+
+CJK_RE = re.compile(r"[\u4e00-\u9fff]")
+_SPLIT = re.compile(r"[\s,，、;；/|+]+")
+
+# 学习意图词：出现即认为用户在意「什么形式的资料」
+MODIFIERS = {
+    # 考试
+    "期末": "exam", "期中": "exam", "考试": "exam", "真题": "exam", "试卷": "exam",
+    "往年": "exam", "题库": "exam", "答案": "answer", "解析": "answer", "题解": "answer",
+    "exam": "exam", "final": "exam", "midterm": "exam", "pastpaper": "exam",
+    # 复习
+    "复习": "review", "刷题": "review", "重点": "review", "考点": "review",
+    "提纲": "review", "总结": "review", "review": "review", "summary": "review",
+    # 讲义/课件
+    "课件": "slides", "ppt": "slides", "幻灯": "slides", "slides": "slides",
+    "讲义": "notes", "笔记": "notes", "教案": "notes", "notes": "notes",
+    "lecture": "notes", "handout": "notes",
+    # 教材
+    "教材": "textbook", "电子版": "textbook", "课本": "textbook", "textbook": "textbook",
+    "ebook": "textbook",
+    # 视频/课程
+    "视频": "video", "网课": "video", "公开课": "video", "慕课": "video", "mooc": "video",
+    "video": "video", "录像": "video",
+    "课程": "course", "大纲": "syllabus", "教学大纲": "syllabus", "syllabus": "syllabus",
+    # 练习
+    "习题": "exercise", "作业": "exercise", "练习": "exercise", "exercise": "exercise",
+    "homework": "exercise", "assignment": "exercise", "problem": "exercise",
+    # 实践
+    "实验": "lab", "项目": "project", "大作业": "project", "课设": "project", "lab": "lab",
+    "project": "project",
+    # 升学/进阶
+    "考研": "kaoyan", "保研": "baoyan", "竞赛": "contest", "入门": "intro", "速成": "intro",
+    "论文": "paper", "文献": "paper", "综述": "paper", "paper": "paper",
+    "cheatsheet": "cheatsheet", "速查": "cheatsheet",
+}
+_MODS_BY_LEN = sorted(MODIFIERS, key=len, reverse=True)
+
+# 只在「空格分隔的整词」或「结尾」时才剥的噪声词（"大学物理" 里的"大学"绝不能剥）
+SAFE_NOISE = {
+    "免费": "", "下载": "", "在线": "", "高清": "", "完整版": "", "全套": "",
+    "最新": "", "超全": "", "整理": "", "无水印": "", "免费下载": "",
+}
+_NOISE_BY_LEN = sorted(SAFE_NOISE, key=len, reverse=True)
+
+
+@dataclass
+class Query:
+    raw: str
+    core: str
+    terms: List[str] = field(default_factory=list)
+    modifiers: Set[str] = field(default_factory=set)
+    lang: str = "en"  # zh / en / mixed
+
+    @property
+    def is_zh(self) -> bool:
+        return self.lang in ("zh", "mixed")
+
+    def wants(self, tag: str) -> bool:
+        return tag in self.modifiers
+
+    def search_string(self) -> str:
+        return self.core or self.raw
+
+
+def detect_lang(text: str) -> str:
+    text = text or ""
+    cjk = len(CJK_RE.findall(text))
+    latin = len(re.findall(r"[A-Za-z]", text))
+    if cjk and latin:
+        return "mixed" if cjk >= 2 else "en"
+    if cjk:
+        return "zh"
+    return "en"
+
+
+def _strip_suffix(core: str, mods: Set[str]) -> str:
+    """反复剥掉结尾的意图词：'高等数学期末复习' -> '高等数学'。"""
+    changed = True
+    while changed and len(core) > 2:
+        changed = False
+        for key in _MODS_BY_LEN:
+            if len(core) - len(key) < 2:
+                continue
+            if core.lower().endswith(key):
+                mods.add(MODIFIERS[key])
+                core = core[: -len(key)].strip()
+                changed = True
+                break
+        for key in _NOISE_BY_LEN:
+            if len(core) - len(key) < 2:
+                continue
+            if core.lower().endswith(key):
+                core = core[: -len(key)].strip()
+                changed = True
+                break
+    return core
+
+
+def parse(text: str) -> Query:
+    raw = " ".join((text or "").split())
+    parts = [p for p in _SPLIT.split(raw) if p]
+    mods: Set[str] = set()
+    keep: List[str] = []
+    for p in parts:
+        key = p.lower()
+        if key in MODIFIERS:
+            mods.add(MODIFIERS[key])
+            continue
+        if p in SAFE_NOISE:
+            continue
+        keep.append(p)
+
+    core = " ".join(keep).strip()
+    core = _strip_suffix(core, mods).strip(" 的")
+    if len(core.replace(" ", "")) < 2:
+        core = raw
+    return Query(raw=raw, core=core, terms=keep, modifiers=mods, lang=detect_lang(raw))

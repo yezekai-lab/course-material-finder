@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>课程资料获取助手</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230b0c0f'/><path d='M8 22V10h2.6l5.4 8 5.4-8H24v12h-2.4v-7.6L16.6 23h-.2l-5-8.6V22z' fill='%23e8eaf0'/></svg>">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<main>
+  <header class="top">
+    <div class="brand">课程资料<span>获取助手</span></div>
+    <div class="topnote">能爬的抓正文 · 爬不到的给链接</div>
+  </header>
+
+  <section class="search" id="search">
+    <div class="field">
+      <input id="q" type="search" placeholder="输入课程名，例如：高等数学 期末复习" autocomplete="off" enterkeyhint="search">
+      <button id="go" class="primary">检索</button>
+    </div>
+    <div class="opts">
+      <label class="chk"><input type="checkbox" id="crawl" checked> 抓正文</label>
+      <label class="sel">条数
+        <select id="limit">
+          <option>20</option><option selected>30</option><option>50</option><option>80</option>
+        </select>
+      </label>
+      <label class="chk"><input type="checkbox" id="download"> 下载 PDF</label>
+      <label class="sel">范围
+        <select id="scope">
+          <option value="all" selected>全部源</option>
+          <option value="zh">中文源</option>
+          <option value="en">英文源</option>
+          <option value="custom">自定义…</option>
+        </select>
+      </label>
+      <button class="link" id="advToggle" aria-expanded="false">高级</button>
+    </div>
+
+    <div class="adv" id="adv" hidden>
+      <div class="advrow" id="srcList"></div>
+      <div class="advrow">
+        <label class="sel">最低相关度 <input id="minscore" type="number" value="10" min="0" max="90" step="5"></label>
+        <label class="sel">检索预算(s) <input id="budget" type="number" value="100" min="10" max="300" step="10"></label>
+      </div>
+    </div>
+  </section>
+
+  <section class="status" id="status" hidden>
+    <div class="statustop">
+      <span class="phase" id="phase">准备中</span>
+      <span class="elapsed" id="elapsed"></span>
+    </div>
+    <div class="srcbar" id="srcbar"></div>
+  </section>
+
+  <section class="results" id="results"></section>
+  <section class="portals" id="portals"></section>
+  <footer class="foot">
+    <span id="failures"></span>
+    <span class="hint">公开接口与公开页面 · 不绕登录墙/付费墙</span>
+  </footer>
+</main>
+<script src="/app.js"></script>
+</body>
+</html>
