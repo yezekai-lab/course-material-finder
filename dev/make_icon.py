@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""生成应用图标（docs/icon.ico + docs/icon.png）。用带 Pillow 的运行时执行：
+"""生成应用图标（docs/icon.ico + docs/icon.png）。
 
-    "C:\\Users\\39954\\.dsh\\dsh-runtimes\\dsh-primary-runtime\\dependencies\\python\\python.exe" dev/make_icon.py
+需要 Pillow：`pip install pillow`，然后 `python dev/make_icon.py`。
 
 设计上只做减法：深色圆角方块 + 一个「课」字，桌面 48px 下能认出是什么。
 """
